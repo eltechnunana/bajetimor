@@ -22,9 +22,6 @@ class TransactionListItem extends StatelessWidget {
     final amount = isIncome 
         ? (transaction as Income).amount 
         : (transaction as Expense).amount;
-    final description = isIncome
-        ? (transaction as Income).note
-        : (transaction as Expense).note;
     final category = isIncome 
         ? (transaction as Income).category 
         : (transaction as Expense).category;
@@ -49,7 +46,7 @@ class TransactionListItem extends StatelessWidget {
           ),
         ),
         title: Text(
-          description ?? 'No description',
+          notes ?? 'No description',
           style: const TextStyle(fontWeight: FontWeight.w500),
         ),
         subtitle: Column(

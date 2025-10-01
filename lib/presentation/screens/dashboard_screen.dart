@@ -8,6 +8,7 @@ import '../widgets/financial_summary_card.dart';
 import '../widgets/expense_chart.dart';
 import '../widgets/income_expense_chart.dart';
 import '../widgets/recent_transactions_list.dart';
+import '../widgets/export_dialog.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -21,6 +22,9 @@ class DashboardScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Bajetimor'),
         actions: [
+          // Export buttons
+          const QuickExportButtons(),
+          const SizedBox(width: 8),
           IconButton(
             icon: Icon(isDarkMode ? Icons.light_mode : Icons.dark_mode),
             onPressed: () {

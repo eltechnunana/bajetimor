@@ -42,6 +42,10 @@ class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
     _amountController.text = budget.amount.toString();
     _selectedCategory = budget.category?.name;
     _selectedPeriod = budget.period.name;
+    
+    // Debug print to help identify the issue
+    print('Budget category: ${budget.category?.name}');
+    print('Budget category ID: ${budget.categoryId}');
   }
 
   @override
@@ -52,8 +56,48 @@ class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final expenseCategories = ref.watch(expenseCategoriesProvider);
+    final expenseCategories = ref.watch(categoriesProvider);
 
+    return expenseCategories.when(
+      data: (categoryList) {
+        // Ensure the selected category is valid when categories are loaded
+        if (widget.isEditing && widget.budget != null) {
+          final budget = widget.budget!;
+          if (budget.category?.name != null) {
+            final categoryExists = categoryList.any((cat) => cat.name == budget.category!.name);
+            if (categoryExists && _selectedCategory != budget.category!.name) {
+              // Use a post-frame callback to avoid calling setState during build
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  setState(() {
+                    _selectedCategory = budget.category!.name;
+                  });
+                }
+              });
+            }
+          }
+        }
+
+        return _buildDialogContent(categoryList);
+      },
+      loading: () => AlertDialog(
+        title: Text(widget.isEditing ? 'Edit Budget' : 'Add Budget'),
+        content: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, _) => AlertDialog(
+        title: Text(widget.isEditing ? 'Edit Budget' : 'Add Budget'),
+        content: Text('Error loading categories: $error'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDialogContent(List<dynamic> categoryList) {
     return AlertDialog(
       title: Text(widget.isEditing ? 'Edit Budget' : 'Add Budget'),
       content: SingleChildScrollView(
@@ -63,57 +107,50 @@ class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
             mainAxisSize: MainAxisSize.min,
             children: [
               // Category dropdown
-              expenseCategories.when(
-                data: (categoryList) {
-                  if (categoryList.isEmpty) {
-                    return Card(
-                      color: Colors.orange.shade50,
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          children: [
-                            Icon(Icons.warning, color: Colors.orange.shade700),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'No expense categories found. Please add expense categories first.',
-                                style: TextStyle(color: Colors.orange.shade700),
-                              ),
-                            ),
-                          ],
+              if (categoryList.isEmpty)
+                Card(
+                  color: Colors.orange.shade50,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+                        Icon(Icons.warning, color: Colors.orange.shade700),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'No categories found. Please add categories first.',
+                            style: TextStyle(color: Colors.orange.shade700),
+                          ),
                         ),
-                      ),
-                    );
-                  }
-                  
-                  return DropdownButtonFormField<String>(
-                    value: _selectedCategory,
-                    decoration: const InputDecoration(
-                      labelText: 'Category',
-                      border: OutlineInputBorder(),
+                      ],
                     ),
-                    items: categoryList.map((category) {
-                      return DropdownMenuItem(
-                        value: category.name,
-                        child: Text(category.name),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedCategory = value;
-                      });
-                    },
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please select a category';
-                      }
-                      return null;
-                    },
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, _) => Text('Error loading categories: $error'),
-              ),
+                  ),
+                )
+              else
+                DropdownButtonFormField<String>(
+                  value: _selectedCategory,
+                  decoration: const InputDecoration(
+                    labelText: 'Category',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: categoryList.map<DropdownMenuItem<String>>((category) {
+                    return DropdownMenuItem<String>(
+                      value: category.name,
+                      child: Text(category.name),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedCategory = value;
+                    });
+                  },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please select a category';
+                    }
+                    return null;
+                  },
+                ),
               
               const SizedBox(height: 16),
               
@@ -192,17 +229,94 @@ class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
       return;
     }
 
+    if (_selectedCategory == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a category'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final amount = double.parse(_amountController.text);
+      final amount = double.parse(_amountController.text.replaceAll(',', ''));
+      
+      // Get the selected category object
+       final categories = await ref.read(expenseCategoriesProvider.future);
+      final selectedCategoryObj = categories.firstWhere((cat) => cat.name == _selectedCategory);
+
+      // Validate that category has an ID
+      if (selectedCategoryObj.id == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Invalid category selected'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Calculate proper start and end dates based on selected period
+      final now = DateTime.now();
+      final selectedPeriodEnum = BudgetPeriod.values.firstWhere((p) => p.name == _selectedPeriod);
+      
+      DateTime startDate;
+      DateTime endDate;
+      
+      switch (selectedPeriodEnum) {
+        case BudgetPeriod.weekly:
+          // Start from beginning of current week (Monday)
+          final weekday = now.weekday;
+          startDate = now.subtract(Duration(days: weekday - 1));
+          startDate = DateTime(startDate.year, startDate.month, startDate.day);
+          endDate = startDate.add(const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
+          break;
+        case BudgetPeriod.monthly:
+          // Start from beginning of current month
+          startDate = DateTime(now.year, now.month, 1);
+          endDate = DateTime(now.year, now.month + 1, 1).subtract(const Duration(seconds: 1));
+          break;
+        case BudgetPeriod.yearly:
+          // Start from beginning of current year
+          startDate = DateTime(now.year, 1, 1);
+          endDate = DateTime(now.year + 1, 1, 1).subtract(const Duration(seconds: 1));
+          break;
+      }
 
       // Check if budget already exists for this category and period (only for new budgets)
       if (!widget.isEditing) {
         final existingBudget = await ref.read(budgetRepositoryProvider)
-            .budgetExistsForCategoryAndPeriod(1, DateTime.now(), DateTime.now().add(const Duration(days: 30)));
+            .budgetExistsForCategoryAndPeriod(selectedCategoryObj.id, startDate, endDate);
+        
+        if (existingBudget) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'A $_selectedPeriod budget for $_selectedCategory already exists',
+                ),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+          return;
+        }
+      } else {
+        // For editing, check if budget exists excluding the current budget
+        final existingBudget = await ref.read(budgetRepositoryProvider)
+            .budgetExistsForCategoryAndPeriod(
+              selectedCategoryObj.id, 
+              startDate, 
+              endDate, 
+              excludeBudgetId: widget.budget!.id
+            );
         
         if (existingBudget) {
           if (mounted) {
@@ -221,11 +335,11 @@ class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
 
       final budget = Budget(
         id: widget.isEditing ? widget.budget!.id : null,
-        categoryId: widget.isEditing ? widget.budget!.categoryId : 1, // TODO: Get actual category ID
+        categoryId: selectedCategoryObj.id!,
         amount: amount,
-        period: BudgetPeriod.values.firstWhere((p) => p.name == _selectedPeriod),
-        startDate: DateTime.now(),
-        endDate: DateTime.now().add(const Duration(days: 30)),
+        period: selectedPeriodEnum,
+        startDate: startDate,
+        endDate: endDate,
         createdAt: widget.isEditing ? widget.budget!.createdAt : DateTime.now(),
         updatedAt: DateTime.now(),
       );

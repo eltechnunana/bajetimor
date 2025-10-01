@@ -4,6 +4,7 @@ import '../../core/models/budget.dart';
 import '../../providers/budget_provider.dart';
 import '../widgets/budget_card.dart';
 import '../widgets/add_budget_dialog.dart';
+import '../widgets/export_dialog.dart';
 
 class BudgetsScreen extends ConsumerWidget {
   const BudgetsScreen({super.key});
@@ -18,6 +19,9 @@ class BudgetsScreen extends ConsumerWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Budgets'),
+          actions: const [
+            QuickExportButtons(),
+          ],
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Active', icon: Icon(Icons.play_circle_outline)),

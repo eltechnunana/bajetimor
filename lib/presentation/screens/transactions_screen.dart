@@ -8,6 +8,7 @@ import '../../providers/expense_provider.dart';
 import '../../providers/category_provider.dart';
 import '../widgets/transaction_list_item.dart';
 import '../widgets/add_transaction_dialog.dart';
+import '../widgets/export_dialog.dart';
 
 /// Provider for managing the current transaction type filter
 final transactionTypeFilterProvider = StateProvider<TransactionType>((ref) => TransactionType.all);
@@ -48,6 +49,9 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Transactions'),
+        actions: const [
+          QuickExportButtons(),
+        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
