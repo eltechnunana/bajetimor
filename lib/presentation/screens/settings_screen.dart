@@ -3,12 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/financial_summary_provider.dart';
-import '../../providers/income_provider.dart';
-import '../../providers/expense_provider.dart';
-import '../../providers/budget_provider.dart';
-import '../../providers/investment_provider.dart';
 import '../widgets/category_management_dialog.dart';
-import '../widgets/export_dialog.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -283,7 +278,19 @@ class SettingsScreen extends ConsumerWidget {
   void _showExportDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => const ExportDialog(),
+      builder: (context) => AlertDialog(
+        title: const Text('Export Data'),
+        content: const Text(
+          'Data export functionality will be available in a future update. '
+          'Your data is safely stored locally on your device.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
     );
   }
 

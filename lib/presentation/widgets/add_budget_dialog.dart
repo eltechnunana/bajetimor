@@ -133,7 +133,7 @@ class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
                     labelText: 'Category',
                     border: OutlineInputBorder(),
                   ),
-                  items: categoryList.map<DropdownMenuItem<String>>((category) {
+                  items: categoryList.map((category) {
                     return DropdownMenuItem<String>(
                       value: category.name,
                       child: Text(category.name),
@@ -229,94 +229,25 @@ class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
       return;
     }
 
-    if (_selectedCategory == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a category'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final amount = double.parse(_amountController.text.replaceAll(',', ''));
+      final amount = double.parse(_amountController.text);
       
-      // Get the selected category object
-       final categories = await ref.read(expenseCategoriesProvider.future);
-      final selectedCategoryObj = categories.firstWhere((cat) => cat.name == _selectedCategory);
-
-      // Validate that category has an ID
-      if (selectedCategoryObj.id == null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Invalid category selected'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        return;
-      }
-
-      // Calculate proper start and end dates based on selected period
-      final now = DateTime.now();
-      final selectedPeriodEnum = BudgetPeriod.values.firstWhere((p) => p.name == _selectedPeriod);
-      
-      DateTime startDate;
-      DateTime endDate;
-      
-      switch (selectedPeriodEnum) {
-        case BudgetPeriod.weekly:
-          // Start from beginning of current week (Monday)
-          final weekday = now.weekday;
-          startDate = now.subtract(Duration(days: weekday - 1));
-          startDate = DateTime(startDate.year, startDate.month, startDate.day);
-          endDate = startDate.add(const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
-          break;
-        case BudgetPeriod.monthly:
-          // Start from beginning of current month
-          startDate = DateTime(now.year, now.month, 1);
-          endDate = DateTime(now.year, now.month + 1, 1).subtract(const Duration(seconds: 1));
-          break;
-        case BudgetPeriod.yearly:
-          // Start from beginning of current year
-          startDate = DateTime(now.year, 1, 1);
-          endDate = DateTime(now.year + 1, 1, 1).subtract(const Duration(seconds: 1));
-          break;
-      }
+      // Get the category ID from the selected category
+      final categoriesAsync = ref.read(categoriesProvider);
+      final categories = categoriesAsync.value ?? [];
+      final selectedCategoryObj = categories.firstWhere(
+        (cat) => cat.name == _selectedCategory,
+        orElse: () => throw Exception('Selected category not found'),
+      );
 
       // Check if budget already exists for this category and period (only for new budgets)
       if (!widget.isEditing) {
         final existingBudget = await ref.read(budgetRepositoryProvider)
-            .budgetExistsForCategoryAndPeriod(selectedCategoryObj.id, startDate, endDate);
-        
-        if (existingBudget) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'A $_selectedPeriod budget for $_selectedCategory already exists',
-                ),
-                backgroundColor: Colors.orange,
-              ),
-            );
-          }
-          return;
-        }
-      } else {
-        // For editing, check if budget exists excluding the current budget
-        final existingBudget = await ref.read(budgetRepositoryProvider)
-            .budgetExistsForCategoryAndPeriod(
-              selectedCategoryObj.id, 
-              startDate, 
-              endDate, 
-              excludeBudgetId: widget.budget!.id
-            );
+            .budgetExistsForCategoryAndPeriod(selectedCategoryObj.id!, DateTime.now(), DateTime.now().add(const Duration(days: 30)));
         
         if (existingBudget) {
           if (mounted) {
@@ -337,9 +268,9 @@ class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
         id: widget.isEditing ? widget.budget!.id : null,
         categoryId: selectedCategoryObj.id!,
         amount: amount,
-        period: selectedPeriodEnum,
-        startDate: startDate,
-        endDate: endDate,
+        period: BudgetPeriod.values.firstWhere((p) => p.name == _selectedPeriod),
+        startDate: DateTime.now(),
+        endDate: DateTime.now().add(const Duration(days: 30)),
         createdAt: widget.isEditing ? widget.budget!.createdAt : DateTime.now(),
         updatedAt: DateTime.now(),
       );
