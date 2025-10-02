@@ -4,6 +4,8 @@
 
 [build.environment]
   FLUTTER_CHANNEL = "stable"
+  # Pin Flutter version to a recent stable that bundles Dart >=3.9.x
+  FLUTTER_VERSION = "3.35.0"
   # Optionally pin a specific Flutter version via FLUTTER_VERSION, e.g. 3.24.3
   # FLUTTER_VERSION = "3.24.3"
 

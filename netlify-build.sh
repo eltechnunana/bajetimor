@@ -10,7 +10,7 @@ if [ -z "$VERSION" ]; then
   # Fetch latest version manifest and pick current stable tag
   # Fallback to manual version if this fails
   VERSION_TAG="$(curl -sL https://storage.googleapis.com/flutter_infra_release/releases/${CHANNEL}/linux/releases_${CHANNEL}.json | sed -n 's/.*"current_release":"\([^"]*\)".*/\1/p')"
-  VERSION="${VERSION_TAG:-3.24.3}"
+VERSION="${VERSION_TAG:-3.35.0}"
 fi
 
 ARCHIVE="flutter_linux_${VERSION}-${CHANNEL}.tar.xz"
@@ -21,6 +21,8 @@ export PATH="${PWD}/flutter/bin:${PATH}"
 echo "==> Flutter version"
 flutter --version
 flutter config --enable-web
+echo "==> Dart version"
+dart --version
 
 echo "==> Installing dependencies"
 flutter pub get
