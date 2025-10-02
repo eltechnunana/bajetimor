@@ -1,0 +1,18 @@
+[build]
+  command = "bash netlify-build.sh"
+  publish = "build/web"
+
+[build.environment]
+  FLUTTER_CHANNEL = "stable"
+  # Optionally pin a specific Flutter version via FLUTTER_VERSION, e.g. 3.24.3
+  # FLUTTER_VERSION = "3.24.3"
+
+# Uncomment to set monorepo base if needed
+# [build]
+#   base = "."
+
+[headers]
+  # Ensure proper content type for WASM when served
+  for = "/sqlite3.wasm"
+  [headers.values]
+    Content-Type = "application/wasm"

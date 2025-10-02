@@ -1,0 +1,7 @@
+/sqlite3.wasm
+  Content-Type: application/wasm
+  Cache-Control: public, max-age=31536000, immutable
+
+/sqflite_sw.js
+  Content-Type: application/javascript
+  Cache-Control: public, max-age=86400
