@@ -4,6 +4,7 @@ import '../../providers/theme_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/financial_summary_provider.dart';
 import '../widgets/category_management_dialog.dart';
+import '../../data/export/export_service.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -280,14 +281,115 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Export Data'),
-        content: const Text(
-          'Data export functionality will be available in a future update. '
-          'Your data is safely stored locally on your device.',
-        ),
+        content: const Text('Choose a format to export your financial data.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
+            child: const Text('Cancel'),
+          ),
+          // Export Excel
+          FilledButton.icon(
+            icon: const Icon(Icons.table_view),
+            label: const Text('Export Excel'),
+            onPressed: () async {
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Preparing Excel export...'),
+                ),
+              );
+
+              try {
+                final exporter = ExportService();
+                final fileName = await exporter.exportAllAsExcel();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Export ready: $fileName'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Export failed: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+          ),
+          // Export PDF
+          FilledButton.icon(
+            icon: const Icon(Icons.picture_as_pdf),
+            label: const Text('Export PDF'),
+            onPressed: () async {
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Preparing PDF export...'),
+                ),
+              );
+
+              try {
+                final exporter = ExportService();
+                final fileName = await exporter.exportAllAsPdf();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Export ready: $fileName'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Export failed: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+          ),
+          FilledButton.icon(
+            icon: const Icon(Icons.file_download),
+            label: const Text('Export JSON'),
+            onPressed: () async {
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Preparing export...'),
+                ),
+              );
+
+              try {
+                final exporter = ExportService();
+                final fileName = await exporter.exportAllAsJson();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Export ready: $fileName'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Export failed: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
           ),
         ],
       ),

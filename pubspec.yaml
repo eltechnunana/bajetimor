@@ -65,6 +65,10 @@ dependencies:
   # Freezed for immutable data classes
   freezed_annotation: ^2.4.1
 
+  # Export formats
+  pdf: ^3.10.6
+  excel: ^2.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
