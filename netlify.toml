@@ -18,3 +18,12 @@
   for = "/sqlite3.wasm"
   [headers.values]
     Content-Type = "application/wasm"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/api/get-post"
+  to = "/.netlify/functions/get-post"
+  status = 200

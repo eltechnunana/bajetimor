@@ -52,6 +52,9 @@ dependencies:
   # Shared Preferences for theme persistence
   shared_preferences: ^2.2.2
   
+  # HTTP client
+  http: ^1.2.1
+  
   # UI Components
   cupertino_icons: ^1.0.8
   flutter_svg: ^2.0.9
