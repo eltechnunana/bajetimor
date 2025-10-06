@@ -1,5 +1,14 @@
 # bajetimor_sqlite
 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/REPLACE_WITH_BADGE_ID/deploy-status)](https://app.netlify.com/sites/REPLACE_WITH_SITE_NAME/deploys)
+
+## Netlify Deploy
+
+- Build command: `bash netlify-build.sh`
+- Publish directory: `build/web`
+- Config: `netlify.toml` pins Flutter `stable` `3.35.0` and sets WASM headers.
+- Deploys: https://app.netlify.com/teams/eltechnunana/projects
+
 ## Android CI Build (Signed AAB)
 
 Use the included GitHub Actions workflow to build a signed Android App Bundle without setting up the local Android SDK.
